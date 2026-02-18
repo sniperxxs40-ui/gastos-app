@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { ExpenseForm } from '@/components/expenses/ExpenseForm'
 import { Category, PaymentMethod } from '@/lib/types'
 import { ExpenseInput } from '@/lib/validators'
@@ -13,7 +14,6 @@ export default function NewExpensePage() {
     const [categories, setCategories] = useState<Category[]>([])
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
     const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
         const fetchMetadata = async () => {
@@ -32,6 +32,7 @@ export default function NewExpensePage() {
                 if (pmRes.ok) setPaymentMethods(pmData.data)
             } catch (error) {
                 console.error('Error fetching metadata:', error)
+                toast.error('Error al cargar las opciones del formulario')
             }
         }
 
@@ -40,7 +41,6 @@ export default function NewExpensePage() {
 
     const handleSubmit = async (data: ExpenseInput) => {
         setLoading(true)
-        setError(null)
 
         try {
             const response = await fetch('/api/expenses', {
@@ -52,14 +52,15 @@ export default function NewExpensePage() {
             const result = await response.json()
 
             if (!response.ok) {
-                setError(result.error || 'Error al crear el gasto')
+                toast.error(result.error || 'Error al crear el gasto')
                 return
             }
 
+            toast.success('Gasto creado exitosamente')
             router.push('/expenses')
         } catch (error) {
             console.error('Error creating expense:', error)
-            setError('Error inesperado al crear el gasto')
+            toast.error('Error inesperado al crear el gasto')
         } finally {
             setLoading(false)
         }
@@ -84,12 +85,6 @@ export default function NewExpensePage() {
 
             {/* Form */}
             <div className="glass-card p-6">
-                {error && (
-                    <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-                        {error}
-                    </div>
-                )}
-
                 <ExpenseForm
                     categories={categories}
                     paymentMethods={paymentMethods}

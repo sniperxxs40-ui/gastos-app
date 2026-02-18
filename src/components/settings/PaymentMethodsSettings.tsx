@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, Pencil, Trash2, X, Check, Loader2, CreditCard } from 'lucide-react'
+import { toast } from 'sonner'
 import { PaymentMethod } from '@/lib/types'
 
 interface PaymentMethodsSettingsProps {
@@ -79,15 +80,19 @@ export function PaymentMethodsSettings({ paymentMethods, onUpdate, loading }: Pa
     }
 
     const handleDelete = async (id: string) => {
-        if (!confirm('¿Eliminar este método de pago?')) return
+        if (!confirm('¿Estás seguro de eliminar este método de pago? Los gastos asociados no se eliminarán.')) return
 
         try {
             const response = await fetch(`/api/payment-methods?id=${id}`, { method: 'DELETE' })
             if (response.ok) {
+                toast.success('Método de pago eliminado exitosamente')
                 onUpdate()
+            } else {
+                toast.error('Error al eliminar el método de pago')
             }
         } catch (error) {
             console.error('Error deleting payment method:', error)
+            toast.error('Error al eliminar el método de pago')
         }
     }
 

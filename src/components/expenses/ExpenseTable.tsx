@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { Pencil, Trash2, RotateCcw, Loader2 } from 'lucide-react'
+import { Pencil, Trash2, RotateCcw } from 'lucide-react'
 import { ExpenseWithRelations } from '@/lib/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { LoadingSkeleton } from '@/components/ui/loading-skeleton'
 
 interface ExpenseTableProps {
     expenses: ExpenseWithRelations[]
@@ -14,8 +15,8 @@ interface ExpenseTableProps {
 export function ExpenseTable({ expenses, loading, onDelete }: ExpenseTableProps) {
     if (loading) {
         return (
-            <div className="flex items-center justify-center p-12">
-                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+            <div className="p-6">
+                <LoadingSkeleton variant="table" count={5} />
             </div>
         )
     }

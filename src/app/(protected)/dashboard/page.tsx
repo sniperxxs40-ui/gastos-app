@@ -4,6 +4,7 @@ import { StatisticsChart } from '@/components/dashboard/StatisticsChart'
 import { RecentExpenses } from '@/components/dashboard/RecentExpenses'
 import { CategoryChart } from '@/components/dashboard/CategoryChart'
 import { BalanceChart } from '@/components/dashboard/BalanceChart'
+import { InsightsPanel } from '@/components/dashboard/InsightsPanel'
 import { AlertTriangle, Banknote, Target } from 'lucide-react'
 import Link from 'next/link'
 
@@ -61,11 +62,10 @@ async function getDashboardData() {
     const budgetAmount = primaryIncome?.amount ? Number(primaryIncome.amount) : 0
     const hasBudget = budgetAmount > 0
 
-    // Calculate balance and percentage used (based on budget if available, otherwise total incomes)
+    // Calculate balance and percentage used (based on total incomes)
     const balance = currentMonthIncomesTotal - currentMonthExpensesTotal
-    const budgetBase = hasBudget ? budgetAmount : currentMonthIncomesTotal
-    const percentageUsed = budgetBase > 0
-        ? Math.round((currentMonthExpensesTotal / budgetBase) * 100)
+    const percentageUsed = currentMonthIncomesTotal > 0
+        ? Math.round((currentMonthExpensesTotal / currentMonthIncomesTotal) * 100)
         : 0
 
     // Determine budget status
@@ -262,6 +262,9 @@ export default async function DashboardPage() {
             {/* Summary Cards */}
             <SummaryCards summary={summary} />
 
+            {/* Insights Panel - NEW */}
+            <InsightsPanel />
+
             {/* Income & Budget Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Budget Card - NEW */}
@@ -336,7 +339,7 @@ export default async function DashboardPage() {
                     </div>
                     <div className="flex items-end gap-2">
                         <p className={`text-2xl font-bold ${budgetData.budgetStatus === 'danger' ? 'text-red-400' :
-                                budgetData.budgetStatus === 'warning' ? 'text-amber-400' : 'text-emerald-400'
+                            budgetData.budgetStatus === 'warning' ? 'text-amber-400' : 'text-emerald-400'
                             }`}>
                             {incomeData.hasIncomes || budgetData.hasBudget ? `${incomeData.percentageUsed}%` : '--%'}
                         </p>
@@ -346,8 +349,8 @@ export default async function DashboardPage() {
                         <div className="mt-3 h-2 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
                             <div
                                 className={`h-full rounded-full transition-all duration-700 ease-out ${budgetData.budgetStatus === 'danger' ? 'bg-gradient-to-r from-red-500 to-rose-500' :
-                                        budgetData.budgetStatus === 'warning' ? 'bg-gradient-to-r from-amber-500 to-orange-500' :
-                                            'bg-gradient-to-r from-emerald-500 to-green-500'
+                                    budgetData.budgetStatus === 'warning' ? 'bg-gradient-to-r from-amber-500 to-orange-500' :
+                                        'bg-gradient-to-r from-emerald-500 to-green-500'
                                     }`}
                                 style={{ width: `${Math.min(incomeData.percentageUsed, 100)}%` }}
                             />
@@ -356,7 +359,7 @@ export default async function DashboardPage() {
                     {/* Dynamic status message */}
                     {(incomeData.hasIncomes || budgetData.hasBudget) && (
                         <p className={`text-xs mt-2 ${budgetData.budgetStatus === 'danger' ? 'text-red-400' :
-                                budgetData.budgetStatus === 'warning' ? 'text-amber-400' : 'text-emerald-400'
+                            budgetData.budgetStatus === 'warning' ? 'text-amber-400' : 'text-emerald-400'
                             }`}>
                             {getBudgetStatusMessage(budgetData.budgetStatus, incomeData.percentageUsed)}
                         </p>

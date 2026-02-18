@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, Pencil, Trash2, X, Check, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Category } from '@/lib/types'
 
 interface CategoriesSettingsProps {
@@ -90,15 +91,19 @@ export function CategoriesSettings({ categories, onUpdate, loading }: Categories
     }
 
     const handleDelete = async (id: string) => {
-        if (!confirm('¿Eliminar esta categoría?')) return
+        if (!confirm('¿Estás seguro de eliminar esta categoría? Los gastos asociados no se eliminarán.')) return
 
         try {
             const response = await fetch(`/api/categories?id=${id}`, { method: 'DELETE' })
             if (response.ok) {
+                toast.success('Categoría eliminada exitosamente')
                 onUpdate()
+            } else {
+                toast.error('Error al eliminar la categoría')
             }
         } catch (error) {
             console.error('Error deleting category:', error)
+            toast.error('Error al eliminar la categoría')
         }
     }
 
