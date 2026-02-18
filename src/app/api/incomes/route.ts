@@ -43,7 +43,8 @@ export async function GET(request: NextRequest) {
             query = query.eq('is_recurring', false)
         }
         if (search) {
-            query = query.or(`description.ilike.%${search}%,source.ilike.%${search}%`)
+            const sanitizedSearch = search.slice(0, 100).replace(/[%_]/g, '\\$&')
+            query = query.or(`description.ilike.%${sanitizedSearch}%,source.ilike.%${sanitizedSearch}%`)
         }
 
         const { data, error, count } = await query
