@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { IncomeForm } from '@/components/incomes/IncomeForm'
 import { IncomeInput } from '@/lib/validators'
 import { ArrowLeft } from 'lucide-react'
@@ -10,11 +11,9 @@ import Link from 'next/link'
 export default function NewIncomePage() {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
 
     const handleSubmit = async (data: IncomeInput) => {
         setLoading(true)
-        setError(null)
 
         try {
             const response = await fetch('/api/incomes', {
@@ -26,14 +25,15 @@ export default function NewIncomePage() {
             const result = await response.json()
 
             if (!response.ok) {
-                setError(result.error || 'Error al crear el ingreso')
+                toast.error(result.error || 'Error al crear el ingreso')
                 return
             }
 
+            toast.success('Ingreso creado exitosamente')
             router.push('/incomes')
         } catch (error) {
             console.error('Error creating income:', error)
-            setError('Error inesperado al crear el ingreso')
+            toast.error('Error inesperado al crear el ingreso')
         } finally {
             setLoading(false)
         }
@@ -58,12 +58,6 @@ export default function NewIncomePage() {
 
             {/* Form */}
             <div className="glass-card p-6">
-                {error && (
-                    <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-                        {error}
-                    </div>
-                )}
-
                 <IncomeForm
                     onSubmit={handleSubmit}
                     loading={loading}

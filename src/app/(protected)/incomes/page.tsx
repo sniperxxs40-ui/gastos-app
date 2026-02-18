@@ -2,10 +2,12 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { toast } from 'sonner'
 import { IncomeTable } from '@/components/incomes/IncomeTable'
 import { Income } from '@/lib/types'
-import { Plus, Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import { LoadingSkeleton } from '@/components/ui/loading-skeleton'
 
 function IncomesContent() {
     const searchParams = useSearchParams()
@@ -43,9 +45,12 @@ function IncomesContent() {
             if (response.ok) {
                 setIncomes(data.data)
                 setPagination(data.pagination)
+            } else {
+                toast.error('Error al cargar los ingresos')
             }
         } catch (error) {
             console.error('Error fetching incomes:', error)
+            toast.error('Error al cargar los ingresos')
         } finally {
             setLoading(false)
         }
@@ -63,10 +68,14 @@ function IncomesContent() {
         try {
             const response = await fetch(`/api/incomes/${id}`, { method: 'DELETE' })
             if (response.ok) {
+                toast.success('Ingreso eliminado exitosamente')
                 setIncomes(incomes.filter(i => i.id !== id))
+            } else {
+                toast.error('Error al eliminar el ingreso')
             }
         } catch (error) {
             console.error('Error deleting income:', error)
+            toast.error('Error al eliminar el ingreso')
         } finally {
             setDeleting(null)
         }
@@ -166,9 +175,7 @@ function IncomesContent() {
             {/* Table */}
             <div className="glass-card p-6">
                 {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-                    </div>
+                    <LoadingSkeleton variant="table" count={5} />
                 ) : (
                     <>
                         <IncomeTable
@@ -214,8 +221,8 @@ function IncomesContent() {
 export default function IncomesPage() {
     return (
         <Suspense fallback={
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+            <div className="p-6">
+                <LoadingSkeleton variant="table" count={5} />
             </div>
         }>
             <IncomesContent />

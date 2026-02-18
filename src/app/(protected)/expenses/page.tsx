@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Plus, Search, Filter, X } from 'lucide-react'
+import { toast } from 'sonner'
 import Link from 'next/link'
 import { ExpenseTable } from '@/components/expenses/ExpenseTable'
 import { FiltersBar } from '@/components/expenses/FiltersBar'
@@ -45,9 +46,12 @@ export default function ExpensesPage() {
                     total: result.pagination.total,
                     totalPages: result.pagination.totalPages,
                 }))
+            } else {
+                toast.error('Error al cargar los gastos')
             }
         } catch (error) {
             console.error('Error fetching expenses:', error)
+            toast.error('Error al cargar los gastos')
         } finally {
             setLoading(false)
         }
@@ -69,6 +73,7 @@ export default function ExpensesPage() {
             if (pmRes.ok) setPaymentMethods(pmData.data)
         } catch (error) {
             console.error('Error fetching metadata:', error)
+            toast.error('Error al cargar las opciones de filtro')
         }
     }
 
@@ -81,15 +86,19 @@ export default function ExpensesPage() {
     }, [fetchExpenses])
 
     const handleDelete = async (id: string) => {
-        if (!confirm('¿Eliminar este gasto?')) return
+        if (!confirm('¿Estás seguro de eliminar este gasto?')) return
 
         try {
             const response = await fetch(`/api/expenses/${id}`, { method: 'DELETE' })
             if (response.ok) {
+                toast.success('Gasto eliminado exitosamente')
                 fetchExpenses()
+            } else {
+                toast.error('Error al eliminar el gasto')
             }
         } catch (error) {
             console.error('Error deleting expense:', error)
+            toast.error('Error al eliminar el gasto')
         }
     }
 
