@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
@@ -8,7 +9,9 @@ import {
     Banknote,
     Settings,
     LogOut,
-    Wallet
+    Wallet,
+    Menu,
+    X
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -24,6 +27,24 @@ export function Sidebar() {
     const pathname = usePathname()
     const router = useRouter()
     const supabase = createClient()
+    const [mobileOpen, setMobileOpen] = useState(false)
+
+    // Close mobile menu on route change
+    useEffect(() => {
+        setMobileOpen(false)
+    }, [pathname])
+
+    // Prevent body scroll when mobile menu is open
+    useEffect(() => {
+        if (mobileOpen) {
+            document.body.style.overflow = 'hidden'
+        } else {
+            document.body.style.overflow = ''
+        }
+        return () => {
+            document.body.style.overflow = ''
+        }
+    }, [mobileOpen])
 
     const handleLogout = async () => {
         await supabase.auth.signOut()
@@ -31,8 +52,8 @@ export function Sidebar() {
         router.refresh()
     }
 
-    return (
-        <aside className="fixed left-0 top-0 h-screen w-64 bg-[var(--bg-sidebar)] border-r border-[var(--border-color)] flex flex-col z-40">
+    const sidebarContent = (
+        <>
             {/* Logo */}
             <div className="p-6">
                 <Link href="/dashboard" className="flex items-center gap-3">
@@ -72,6 +93,58 @@ export function Sidebar() {
                     <span>Cerrar sesión</span>
                 </button>
             </div>
-        </aside>
+        </>
+    )
+
+    return (
+        <>
+            {/* Mobile Header Bar */}
+            <div className="mobile-header md:hidden">
+                <button
+                    onClick={() => setMobileOpen(true)}
+                    className="p-2 rounded-lg text-white hover:bg-[var(--bg-card)] transition-colors"
+                    aria-label="Abrir menú"
+                >
+                    <Menu className="w-6 h-6" />
+                </button>
+                <Link href="/dashboard" className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                        <Wallet className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-lg font-bold text-white">Gastos</span>
+                </Link>
+                <div className="w-10" /> {/* Spacer for centering */}
+            </div>
+
+            {/* Desktop Sidebar */}
+            <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 bg-[var(--bg-sidebar)] border-r border-[var(--border-color)] flex-col z-40">
+                {sidebarContent}
+            </aside>
+
+            {/* Mobile Sidebar Overlay */}
+            {mobileOpen && (
+                <div className="fixed inset-0 z-50 md:hidden">
+                    {/* Backdrop */}
+                    <div
+                        className="sidebar-backdrop"
+                        onClick={() => setMobileOpen(false)}
+                    />
+                    {/* Sidebar Panel */}
+                    <aside className="sidebar-mobile">
+                        {/* Close Button */}
+                        <div className="absolute top-4 right-4">
+                            <button
+                                onClick={() => setMobileOpen(false)}
+                                className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card)] transition-colors"
+                                aria-label="Cerrar menú"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        {sidebarContent}
+                    </aside>
+                </div>
+            )}
+        </>
     )
 }

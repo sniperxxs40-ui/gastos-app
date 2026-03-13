@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
@@ -20,7 +20,9 @@ const resetPasswordSchema = z.object({
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>
 
-export default function ResetPasswordPage() {
+const authBackground = { background: 'url(/auth-bg.png) center/cover no-repeat fixed, #0b1120' }
+
+function ResetPasswordFormContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const supabase = createClient()
@@ -38,14 +40,11 @@ export default function ResetPasswordPage() {
         resolver: zodResolver(resetPasswordSchema),
     })
 
-    // Verificar y establecer sesión desde el token de recuperación en la URL
     useEffect(() => {
         const handleRecovery = async () => {
-            // 1. Intentar desde query params (?token=xxx&type=recovery)
             const queryToken = searchParams.get('token')
             const queryType = searchParams.get('type')
 
-            // 2. Intentar desde hash params (#access_token=xxx&type=recovery)
             const hashParams = new URLSearchParams(window.location.hash.substring(1))
             const hashAccessToken = hashParams.get('access_token')
             const hashRefreshToken = hashParams.get('refresh_token')
@@ -55,7 +54,6 @@ export default function ResetPasswordPage() {
             console.log('Query params:', { token: !!queryToken, type: queryType })
             console.log('Hash params:', { accessToken: !!hashAccessToken, type: hashType })
 
-            // Caso A: Token viene como query param (Supabase self-hosted / GoTrue)
             if (queryToken && queryType === 'recovery') {
                 console.log('Verifying OTP from query token...')
                 try {
@@ -81,7 +79,6 @@ export default function ResetPasswordPage() {
                 return
             }
 
-            // Caso B: Token viene como hash param (Supabase Cloud)
             if (hashAccessToken && hashType === 'recovery') {
                 console.log('Setting session from hash token...')
                 const { data, error } = await supabase.auth.setSession({
@@ -101,7 +98,6 @@ export default function ResetPasswordPage() {
                 return
             }
 
-            // Caso C: No hay token válido
             console.log('No recovery token found in URL')
             setCheckingSession(false)
         }
@@ -124,7 +120,6 @@ export default function ResetPasswordPage() {
             setPasswordUpdated(true)
             toast.success('Contraseña actualizada exitosamente')
 
-            // Redirect después de 2 segundos
             setTimeout(() => {
                 router.push('/login')
             }, 2000)
@@ -134,46 +129,44 @@ export default function ResetPasswordPage() {
         }
     }
 
-    // Mostrar loading mientras se establece la sesión
+
+    // Loading state
     if (checkingSession) {
         return (
             <div className="min-h-screen flex items-center justify-center p-4">
-                <div className="w-full max-w-md animate-fadeIn">
-                    <div className="glass-card p-8 text-center">
-                        <Loader2 className="w-12 h-12 text-emerald-400 animate-spin mx-auto mb-4" />
-                        <h2 className="text-xl font-bold text-white mb-2">
-                            Verificando enlace...
-                        </h2>
-                        <p className="text-[var(--text-secondary)]">
-                            Por favor espera un momento
-                        </p>
-                    </div>
+                <div className="w-full max-w-sm animate-fadeIn text-center">
+                    <Loader2 className="w-12 h-12 text-[#2dd4a8] animate-spin mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-white mb-2">
+                        Verificando enlace...
+                    </h2>
+                    <p className="text-[#7a8ba0]">
+                        Por favor espera un momento
+                    </p>
                 </div>
             </div>
         )
     }
 
+    // Success state
     if (passwordUpdated) {
         return (
             <div className="min-h-screen flex items-center justify-center p-4">
-                <div className="w-full max-w-md animate-fadeIn">
-                    <div className="glass-card p-8 text-center">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 mb-6">
-                            <CheckCircle className="w-8 h-8 text-emerald-400" />
-                        </div>
+                <div className="w-full max-w-sm animate-fadeIn text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#2dd4a8]/20 mb-6">
+                        <CheckCircle className="w-8 h-8 text-[#2dd4a8]" />
+                    </div>
 
-                        <h2 className="text-2xl font-bold text-white mb-4">
-                            ¡Contraseña actualizada!
-                        </h2>
+                    <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">
+                        ¡Contraseña actualizada!
+                    </h2>
 
-                        <p className="text-[var(--text-secondary)] mb-8">
-                            Tu contraseña ha sido actualizada correctamente. Redirigiendo al login...
-                        </p>
+                    <p className="text-[#7a8ba0] mb-8">
+                        Tu contraseña ha sido actualizada correctamente. Redirigiendo al login...
+                    </p>
 
-                        <div className="flex items-center justify-center gap-2 text-emerald-400">
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            <span>Redirigiendo...</span>
-                        </div>
+                    <div className="flex items-center justify-center gap-2 text-[#2dd4a8]">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Redirigiendo...</span>
                     </div>
                 </div>
             </div>
@@ -182,75 +175,74 @@ export default function ResetPasswordPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="w-full max-w-md animate-fadeIn">
-                {/* Header */}
+            <div className="w-full max-w-sm animate-fadeIn">
+                {/* Logo */}
                 <div className="text-center mb-8">
-                    <h1 className="text-2xl font-bold text-white">
-                        Restablecer contraseña
-                    </h1>
-                    <p className="text-[var(--text-secondary)] mt-2">
+                    <div className="inline-block mb-3">
+                        <img src="/logo.png" alt="Control de Gastos" width={120} height={120} className="drop-shadow-[0_0_15px_rgba(45,212,168,0.3)]" />
+                    </div>
+                    <h1 className="text-3xl font-bold text-white tracking-tight">Nueva contraseña</h1>
+                    <p className="text-[#7a8ba0] mt-2 text-base">
                         Ingresa tu nueva contraseña
                     </p>
                 </div>
 
-                {/* Form Card */}
-                <div className="glass-card p-8">
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                        {/* Password */}
-                        <div>
-                            <label className="input-label">Nueva contraseña</label>
-                            <div className="relative">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
-                                <input
-                                    {...register('password')}
-                                    type={showPassword ? 'text' : 'password'}
-                                    placeholder="••••••••"
-                                    className="input-field pl-12 pr-12"
-                                    autoComplete="new-password"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-white transition-colors"
-                                >
-                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                </button>
-                            </div>
-                            {errors.password && (
-                                <p className="input-error">{errors.password.message}</p>
-                            )}
+                {/* Form */}
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    {/* Password */}
+                    <div>
+                        <div className="relative">
+                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#2dd4a8]" />
+                            <input
+                                {...register('password')}
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Nueva contraseña"
+                                className="auth-input pr-14"
+                                autoComplete="new-password"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-5 top-1/2 -translate-y-1/2 text-[#2dd4a8] hover:text-[#5eebc5] transition-colors"
+                            >
+                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
                         </div>
+                        {errors.password && (
+                            <p className="text-red-400 text-xs mt-2 ml-5">{errors.password.message}</p>
+                        )}
+                    </div>
 
-                        {/* Confirm Password */}
-                        <div>
-                            <label className="input-label">Confirmar contraseña</label>
-                            <div className="relative">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
-                                <input
-                                    {...register('confirmPassword')}
-                                    type={showConfirmPassword ? 'text' : 'password'}
-                                    placeholder="••••••••"
-                                    className="input-field pl-12 pr-12"
-                                    autoComplete="new-password"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-white transition-colors"
-                                >
-                                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                </button>
-                            </div>
-                            {errors.confirmPassword && (
-                                <p className="input-error">{errors.confirmPassword.message}</p>
-                            )}
+                    {/* Confirm Password */}
+                    <div>
+                        <div className="relative">
+                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#2dd4a8]" />
+                            <input
+                                {...register('confirmPassword')}
+                                type={showConfirmPassword ? 'text' : 'password'}
+                                placeholder="Confirmar contraseña"
+                                className="auth-input pr-14"
+                                autoComplete="new-password"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute right-5 top-1/2 -translate-y-1/2 text-[#2dd4a8] hover:text-[#5eebc5] transition-colors"
+                            >
+                                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
                         </div>
+                        {errors.confirmPassword && (
+                            <p className="text-red-400 text-xs mt-2 ml-5">{errors.confirmPassword.message}</p>
+                        )}
+                    </div>
 
-                        {/* Submit */}
+                    {/* Submit */}
+                    <div className="pt-2">
                         <button
                             type="submit"
                             disabled={isSubmitting || !sessionReady}
-                            className="btn-gradient w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="auth-btn w-full flex items-center justify-center gap-2"
                         >
                             {isSubmitting ? (
                                 <>
@@ -263,25 +255,36 @@ export default function ResetPasswordPage() {
                                     <span>Preparando...</span>
                                 </>
                             ) : (
-                                <>
-                                    <Lock className="w-5 h-5" />
-                                    <span>Actualizar contraseña</span>
-                                </>
+                                <span>Actualizar contraseña</span>
                             )}
                         </button>
-                    </form>
-
-                    {/* Back to Login */}
-                    <div className="mt-6 text-center">
-                        <Link
-                            href="/login"
-                            className="text-[var(--text-secondary)] hover:text-white transition-colors text-sm"
-                        >
-                            Volver al login
-                        </Link>
                     </div>
+                </form>
+
+                {/* Back to Login */}
+                <div className="text-center mt-8">
+                    <Link
+                        href="/login"
+                        className="text-[#7a8ba0] hover:text-[#a0b0c0] transition-colors text-sm"
+                    >
+                        Volver al login
+                    </Link>
                 </div>
             </div>
+        </div>
+    )
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <div style={authBackground}>
+            <Suspense fallback={
+                <div className="min-h-screen flex items-center justify-center p-4">
+                    <Loader2 className="w-12 h-12 text-[#2dd4a8] animate-spin mx-auto" />
+                </div>
+            }>
+                <ResetPasswordFormContent />
+            </Suspense>
         </div>
     )
 }

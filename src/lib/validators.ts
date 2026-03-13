@@ -11,9 +11,13 @@ export const expenseSchema = z.object({
     is_recurring: z.boolean(),
     recurring_frequency: z.enum(['weekly', 'monthly', 'yearly']).optional().nullable(),
     recurring_start_date: z.string().optional().nullable(),
+    // Installments (cuotas)
+    is_installment: z.boolean().optional(),
+    installments: z.number().int().min(2, 'Mínimo 2 cuotas').max(72, 'Máximo 72 cuotas').optional().nullable(),
+    total_amount: z.number().positive('El monto total debe ser mayor a 0').optional().nullable(),
 }).refine(
     (data) => {
-        if (data.is_recurring && !data.recurring_frequency) {
+        if (data.is_recurring && !data.is_installment && !data.recurring_frequency) {
             return false
         }
         return true
@@ -21,6 +25,28 @@ export const expenseSchema = z.object({
     {
         message: 'La frecuencia es requerida para gastos recurrentes',
         path: ['recurring_frequency'],
+    }
+).refine(
+    (data) => {
+        if (data.is_installment && !data.installments) {
+            return false
+        }
+        return true
+    },
+    {
+        message: 'El número de cuotas es requerido',
+        path: ['installments'],
+    }
+).refine(
+    (data) => {
+        if (data.is_installment && !data.total_amount) {
+            return false
+        }
+        return true
+    },
+    {
+        message: 'El monto total es requerido para compras en cuotas',
+        path: ['total_amount'],
     }
 )
 

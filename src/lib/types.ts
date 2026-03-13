@@ -41,6 +41,9 @@ export interface Expense {
     recurring_start_date: string | null
     next_occurrence_date: string | null
     recurring_active: boolean
+    // Installments (cuotas)
+    installments: number | null
+    installments_paid: number
     created_at: string
     updated_at: string
 }
@@ -63,6 +66,10 @@ export interface ExpenseFormData {
     is_recurring: boolean
     recurring_frequency?: 'weekly' | 'monthly' | 'yearly'
     recurring_start_date?: string
+    // Installments (cuotas)
+    is_installment?: boolean
+    installments?: number
+    total_amount?: number
 }
 
 export interface CategoryFormData {
@@ -130,6 +137,7 @@ export interface IncomeFormData {
     frequency?: 'weekly' | 'monthly' | 'yearly'
     income_date: string
     description?: string
+    is_primary: boolean
 }
 
 export interface IncomeFilters {

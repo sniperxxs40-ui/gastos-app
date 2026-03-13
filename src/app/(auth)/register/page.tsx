@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, Mail, Lock, Eye, EyeOff, User, Wallet } from 'lucide-react'
+import { Loader2, Mail, Lock, Eye, EyeOff, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const registerSchema = z.object({
@@ -62,113 +62,111 @@ export default function RegisterPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="w-full max-w-md animate-fadeIn">
+        <div className="min-h-screen flex items-center justify-center p-4"
+            style={{ background: 'url(/auth-bg.png) center/cover no-repeat fixed, #0b1120' }}
+        >
+            <div className="w-full max-w-sm animate-fadeIn">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 mb-4">
-                        <Wallet className="w-8 h-8 text-white" />
+                    <div className="inline-block mb-3">
+                        <img src="/logo.png" alt="Control de Gastos" width={120} height={120} className="drop-shadow-[0_0_15px_rgba(45,212,168,0.3)]" />
                     </div>
-                    <h1 className="text-2xl font-bold text-white">Crear cuenta</h1>
-                    <p className="text-[var(--text-secondary)] mt-2">
+                    <h1 className="text-3xl font-bold text-white tracking-tight">Crear cuenta</h1>
+                    <p className="text-[#7a8ba0] mt-2 text-base">
                         Comienza a controlar tus gastos
                     </p>
                 </div>
 
-                {/* Form Card */}
-                <div className="glass-card p-8">
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                        {/* Error Alert */}
-                        {error && (
-                            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-                                {error}
-                            </div>
+                {/* Form */}
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    {/* Error Alert */}
+                    {error && (
+                        <div className="p-4 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+                            {error}
+                        </div>
+                    )}
+
+                    {/* Full Name */}
+                    <div>
+                        <div className="relative">
+                            <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#2dd4a8]" />
+                            <input
+                                {...register('fullName')}
+                                type="text"
+                                placeholder="Nombre completo"
+                                className="auth-input"
+                                autoComplete="name"
+                            />
+                        </div>
+                        {errors.fullName && (
+                            <p className="text-red-400 text-xs mt-2 ml-5">{errors.fullName.message}</p>
                         )}
+                    </div>
 
-                        {/* Full Name */}
-                        <div>
-                            <label className="input-label">Nombre completo</label>
-                            <div className="relative">
-                                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
-                                <input
-                                    {...register('fullName')}
-                                    type="text"
-                                    placeholder="Juan Pérez"
-                                    className="input-field pl-12"
-                                    autoComplete="name"
-                                />
-                            </div>
-                            {errors.fullName && (
-                                <p className="input-error">{errors.fullName.message}</p>
-                            )}
+                    {/* Email */}
+                    <div>
+                        <div className="relative">
+                            <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#2dd4a8]" />
+                            <input
+                                {...register('email')}
+                                type="email"
+                                placeholder="tu@email.com"
+                                className="auth-input"
+                                autoComplete="email"
+                            />
                         </div>
+                        {errors.email && (
+                            <p className="text-red-400 text-xs mt-2 ml-5">{errors.email.message}</p>
+                        )}
+                    </div>
 
-                        {/* Email */}
-                        <div>
-                            <label className="input-label">Email</label>
-                            <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
-                                <input
-                                    {...register('email')}
-                                    type="email"
-                                    placeholder="tu@email.com"
-                                    className="input-field pl-12"
-                                    autoComplete="email"
-                                />
-                            </div>
-                            {errors.email && (
-                                <p className="input-error">{errors.email.message}</p>
-                            )}
+                    {/* Password */}
+                    <div>
+                        <div className="relative">
+                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#2dd4a8]" />
+                            <input
+                                {...register('password')}
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Contraseña"
+                                className="auth-input pr-14"
+                                autoComplete="new-password"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-5 top-1/2 -translate-y-1/2 text-[#2dd4a8] hover:text-[#5eebc5] transition-colors"
+                            >
+                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
                         </div>
+                        {errors.password && (
+                            <p className="text-red-400 text-xs mt-2 ml-5">{errors.password.message}</p>
+                        )}
+                    </div>
 
-                        {/* Password */}
-                        <div>
-                            <label className="input-label">Contraseña</label>
-                            <div className="relative">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
-                                <input
-                                    {...register('password')}
-                                    type={showPassword ? 'text' : 'password'}
-                                    placeholder="••••••••"
-                                    className="input-field pl-12 pr-12"
-                                    autoComplete="new-password"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-white transition-colors"
-                                >
-                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                </button>
-                            </div>
-                            {errors.password && (
-                                <p className="input-error">{errors.password.message}</p>
-                            )}
+                    {/* Confirm Password */}
+                    <div>
+                        <div className="relative">
+                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#2dd4a8]" />
+                            <input
+                                {...register('confirmPassword')}
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Confirmar contraseña"
+                                className="auth-input"
+                                autoComplete="new-password"
+                            />
                         </div>
+                        {errors.confirmPassword && (
+                            <p className="text-red-400 text-xs mt-2 ml-5">{errors.confirmPassword.message}</p>
+                        )}
+                    </div>
 
-                        {/* Confirm Password */}
-                        <div>
-                            <label className="input-label">Confirmar contraseña</label>
-                            <div className="relative">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
-                                <input
-                                    {...register('confirmPassword')}
-                                    type={showPassword ? 'text' : 'password'}
-                                    placeholder="••••••••"
-                                    className="input-field pl-12"
-                                    autoComplete="new-password"
-                                />
-                            </div>
-                            {errors.confirmPassword && (
-                                <p className="input-error">{errors.confirmPassword.message}</p>
-                            )}
-                        </div>
-
-                        {/* Submit */}
+                    {/* Submit */}
+                    <div className="pt-2">
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="btn-gradient w-full flex items-center justify-center gap-2"
+                            className="auth-btn w-full flex items-center justify-center gap-2"
                         >
                             {isSubmitting ? (
                                 <>
@@ -179,15 +177,19 @@ export default function RegisterPage() {
                                 <span>Crear cuenta</span>
                             )}
                         </button>
-                    </form>
+                    </div>
+                </form>
 
-                    {/* Login Link */}
-                    <p className="text-center mt-6 text-[var(--text-secondary)]">
-                        ¿Ya tienes cuenta?{' '}
-                        <Link href="/login" className="text-emerald-400 hover:text-emerald-300 font-medium">
-                            Inicia sesión
+                {/* Login Link */}
+                <div className="text-center mt-8 space-y-3">
+                    <div>
+                        <Link
+                            href="/login"
+                            className="text-[#7a8ba0] hover:text-[#a0b0c0] transition-colors text-sm"
+                        >
+                            ¿Ya tienes cuenta? <span className="text-[#2dd4a8] hover:text-[#5eebc5]">Inicia sesión</span>
                         </Link>
-                    </p>
+                    </div>
                 </div>
             </div>
         </div>

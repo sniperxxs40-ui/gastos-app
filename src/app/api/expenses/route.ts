@@ -98,23 +98,65 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const expenseData = {
-            ...validationResult.data,
-            user_id: user.id,
-            category_id: validationResult.data.category_id || null,
-            payment_method_id: validationResult.data.payment_method_id || null,
-            recurring_frequency: validationResult.data.is_recurring
-                ? validationResult.data.recurring_frequency
-                : null,
-            recurring_start_date: validationResult.data.is_recurring
-                ? validationResult.data.recurring_start_date || validationResult.data.expense_date
-                : null,
-            next_occurrence_date: validationResult.data.is_recurring
-                ? calculateNextOccurrence(
-                    validationResult.data.expense_date,
-                    validationResult.data.recurring_frequency!
-                )
-                : null,
+        const validated = validationResult.data
+        const isInstallment = validated.is_installment === true
+
+        let expenseData: Record<string, unknown>
+
+        if (isInstallment) {
+            // ── Compra en cuotas ─────────────────────────────────────
+            const totalInstallments = validated.installments!
+            const totalAmount = validated.total_amount!
+            // Round up so total is never underpaid
+            const amountPerInstallment = Math.ceil(totalAmount / totalInstallments)
+
+            expenseData = {
+                user_id: user.id,
+                amount: amountPerInstallment,
+                currency: validated.currency,
+                expense_date: validated.expense_date,
+                description: validated.description || null,
+                merchant: validated.merchant || null,
+                category_id: validated.category_id || null,
+                payment_method_id: validated.payment_method_id || null,
+                // Stored as monthly recurring
+                is_recurring: true,
+                recurring_frequency: 'monthly',
+                recurring_start_date: validated.expense_date,
+                next_occurrence_date: calculateNextOccurrence(validated.expense_date, 'monthly'),
+                recurring_active: true,
+                // Installment-specific
+                installments: totalInstallments,
+                installments_paid: 0,
+            }
+        } else {
+            // ── Gasto normal / recurrente indefinido ──────────────────
+            expenseData = {
+                user_id: user.id,
+                amount: validated.amount,
+                currency: validated.currency,
+                expense_date: validated.expense_date,
+                description: validated.description || null,
+                merchant: validated.merchant || null,
+                category_id: validated.category_id || null,
+                payment_method_id: validated.payment_method_id || null,
+                is_recurring: validated.is_recurring,
+                recurring_frequency: validated.is_recurring
+                    ? validated.recurring_frequency
+                    : null,
+                recurring_start_date: validated.is_recurring
+                    ? validated.recurring_start_date || validated.expense_date
+                    : null,
+                next_occurrence_date: validated.is_recurring
+                    ? calculateNextOccurrence(
+                        validated.expense_date,
+                        validated.recurring_frequency!
+                    )
+                    : null,
+                recurring_active: true,
+                installments: null,
+                installments_paid: 0,
+            }
         }
 
         const { data, error } = await supabase
@@ -138,6 +180,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
     }
 }
+
 
 function calculateNextOccurrence(date: string, frequency: 'weekly' | 'monthly' | 'yearly'): string {
     const d = new Date(date)

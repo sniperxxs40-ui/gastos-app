@@ -1,216 +1,16 @@
-import { createClient } from '@/lib/supabase/server'
+import { getDashboardData } from '@/lib/data/dashboard'
 import { SummaryCards } from '@/components/dashboard/SummaryCards'
 import { StatisticsChart } from '@/components/dashboard/StatisticsChart'
 import { RecentExpenses } from '@/components/dashboard/RecentExpenses'
 import { CategoryChart } from '@/components/dashboard/CategoryChart'
 import { BalanceChart } from '@/components/dashboard/BalanceChart'
 import { InsightsPanel } from '@/components/dashboard/InsightsPanel'
-import { AlertTriangle, Banknote, Target } from 'lucide-react'
+import { AlertTriangle, Banknote, Target, Settings, PlusCircle, CheckCircle2, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
-async function getDashboardData() {
-    const supabase = await createClient()
 
-    const now = new Date()
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
-    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
-    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0]
-    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0]
-
-    // Get current month expenses total
-    const { data: currentMonthExpenses } = await supabase
-        .from('expenses')
-        .select('amount')
-        .gte('expense_date', currentMonthStart)
-        .lte('expense_date', currentMonthEnd)
-
-    const currentMonthExpensesTotal = currentMonthExpenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
-
-    // Get previous month expenses total
-    const { data: previousMonthExpenses } = await supabase
-        .from('expenses')
-        .select('amount')
-        .gte('expense_date', previousMonthStart)
-        .lte('expense_date', previousMonthEnd)
-
-    const previousMonthExpensesTotal = previousMonthExpenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
-
-    // Get current month incomes total
-    const { data: currentMonthIncomes } = await supabase
-        .from('incomes')
-        .select('amount')
-        .gte('income_date', currentMonthStart)
-        .lte('income_date', currentMonthEnd)
-
-    const currentMonthIncomesTotal = currentMonthIncomes?.reduce((sum, i) => sum + Number(i.amount), 0) || 0
-
-    const hasIncomes = currentMonthIncomesTotal > 0
-
-    // Get primary income for budget (most recent primary income in current month)
-    const { data: primaryIncome } = await supabase
-        .from('incomes')
-        .select('amount')
-        .eq('is_primary', true)
-        .gte('income_date', currentMonthStart)
-        .lte('income_date', currentMonthEnd)
-        .order('income_date', { ascending: false })
-        .limit(1)
-        .single()
-
-    const budgetAmount = primaryIncome?.amount ? Number(primaryIncome.amount) : 0
-    const hasBudget = budgetAmount > 0
-
-    // Calculate balance and percentage used (based on total incomes)
-    const balance = currentMonthIncomesTotal - currentMonthExpensesTotal
-    const percentageUsed = currentMonthIncomesTotal > 0
-        ? Math.round((currentMonthExpensesTotal / currentMonthIncomesTotal) * 100)
-        : 0
-
-    // Determine budget status
-    type BudgetStatus = 'ok' | 'warning' | 'danger'
-    let budgetStatus: BudgetStatus = 'ok'
-    if (percentageUsed >= 85) {
-        budgetStatus = 'danger'
-    } else if (percentageUsed >= 70) {
-        budgetStatus = 'warning'
-    }
-
-    // Get last 6 months data for balance chart
-    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString().split('T')[0]
-
-    const { data: monthlyExpenses } = await supabase
-        .from('expenses')
-        .select('amount, expense_date')
-        .gte('expense_date', sixMonthsAgo)
-        .order('expense_date', { ascending: true })
-
-    const { data: monthlyIncomes } = await supabase
-        .from('incomes')
-        .select('amount, income_date')
-        .gte('income_date', sixMonthsAgo)
-        .order('income_date', { ascending: true })
-
-    // Group expenses by month
-    const monthlyExpenseTotals: { [key: string]: number } = {}
-    monthlyExpenses?.forEach(expense => {
-        const date = new Date(expense.expense_date)
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-        monthlyExpenseTotals[key] = (monthlyExpenseTotals[key] || 0) + Number(expense.amount)
-    })
-
-    // Group incomes by month
-    const monthlyIncomeTotals: { [key: string]: number } = {}
-    monthlyIncomes?.forEach(income => {
-        const date = new Date(income.income_date)
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-        monthlyIncomeTotals[key] = (monthlyIncomeTotals[key] || 0) + Number(income.amount)
-    })
-
-    // Combine for chart
-    const allMonths = new Set([...Object.keys(monthlyExpenseTotals), ...Object.keys(monthlyIncomeTotals)])
-    const expenseChartData = Object.entries(monthlyExpenseTotals).map(([month, total]) => ({
-        month,
-        total,
-    })).sort((a, b) => a.month.localeCompare(b.month))
-
-    const balanceChartData = Array.from(allMonths).sort().map(month => ({
-        month,
-        incomes: monthlyIncomeTotals[month] || 0,
-        expenses: monthlyExpenseTotals[month] || 0,
-    }))
-
-    // Get expenses by category for current month
-    const { data: categoryData } = await supabase
-        .from('expenses')
-        .select(`
-      amount,
-      category:categories(id, name, color)
-    `)
-        .gte('expense_date', currentMonthStart)
-        .lte('expense_date', currentMonthEnd)
-
-    type CategoryResult = { id: string; name: string; color: string | null } | null
-    const categoryTotals: { [key: string]: { name: string; color: string; total: number } } = {}
-    categoryData?.forEach(expense => {
-        const rawCategory = expense.category
-        const category: CategoryResult = Array.isArray(rawCategory) ? rawCategory[0] : rawCategory
-        const key = category?.id || 'sin-categoria'
-        const name = category?.name || 'Sin categoría'
-        const color = category?.color || '#6b7280'
-        if (!categoryTotals[key]) {
-            categoryTotals[key] = { name, color, total: 0 }
-        }
-        categoryTotals[key].total += Number(expense.amount)
-    })
-
-    const categoryChartData = Object.entries(categoryTotals)
-        .map(([id, data]) => ({
-            id,
-            name: data.name,
-            color: data.color,
-            total: data.total,
-        }))
-        .sort((a, b) => b.total - a.total)
-        .slice(0, 6)
-
-    // Get recent expenses
-    const { data: recentExpenses } = await supabase
-        .from('expenses')
-        .select(`
-      id,
-      amount,
-      expense_date,
-      description,
-      merchant,
-      category:categories(name, color, icon)
-    `)
-        .order('expense_date', { ascending: false })
-        .limit(5)
-
-    // Calculate percentage change for expenses
-    const percentageChange = previousMonthExpensesTotal === 0
-        ? (currentMonthExpensesTotal > 0 ? 100 : 0)
-        : Math.round(((currentMonthExpensesTotal - previousMonthExpensesTotal) / previousMonthExpensesTotal) * 100)
-
-    // Calculate average (all time)
-    const { data: allExpenses } = await supabase
-        .from('expenses')
-        .select('amount, expense_date')
-
-    const allTotal = allExpenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
-    const months = new Set(allExpenses?.map(e => {
-        const d = new Date(e.expense_date)
-        return `${d.getFullYear()}-${d.getMonth()}`
-    })).size || 1
-    const average = Math.round(allTotal / months)
-
-    return {
-        summary: {
-            currentMonth: currentMonthExpensesTotal,
-            previousMonth: previousMonthExpensesTotal,
-            percentageChange,
-            average,
-        },
-        incomeData: {
-            currentMonthIncomes: currentMonthIncomesTotal,
-            balance,
-            percentageUsed,
-            hasIncomes,
-        },
-        budgetData: {
-            budgetAmount,
-            hasBudget,
-            budgetStatus,
-            totalExpenses: currentMonthExpensesTotal,
-        },
-        expenseChartData,
-        balanceChartData,
-        categoryChartData,
-        recentExpenses: recentExpenses || [],
-    }
-}
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('es-CL', {
@@ -227,8 +27,121 @@ function getBudgetStatusMessage(status: 'ok' | 'warning' | 'danger', percentageU
 }
 
 export default async function DashboardPage() {
-    const { summary, incomeData, budgetData, expenseChartData, balanceChartData, categoryChartData, recentExpenses } = await getDashboardData()
+    const { isEmpty, summary, incomeData, budgetData, expenseChartData, balanceChartData, categoryChartData, recentExpenses } = await getDashboardData()
 
+    // ── Estado vacío: pantalla de bienvenida ──────────────────
+    if (isEmpty) {
+        const steps = [
+            {
+                number: 1,
+                icon: Settings,
+                title: '¿Ya tienes tus categorías listas?',
+                description: 'Revisa las categorías que vienen por defecto (Alimentación, Arriendo, Salud, etc.) o crea las tuyas propias. Las categorías te ayudan a organizar tus gastos.',
+                action: { label: 'Ver categorías', href: '/settings' },
+                gradient: 'from-purple-500 to-indigo-500',
+                bg: 'bg-purple-500/10 border-purple-500/30',
+                btnBorder: 'border-purple-400',
+                btnText: 'text-purple-300',
+                btnHover: 'hover:bg-purple-500/20',
+            },
+            {
+                number: 2,
+                icon: Banknote,
+                title: 'Registra tu sueldo del mes',
+                description: 'Ingresa cuánto dinero recibiste este mes. Así la aplicación puede mostrarte cuánto te queda disponible y si vas bien con tu presupuesto.',
+                action: { label: 'Registrar ingreso', href: '/incomes/new' },
+                gradient: 'from-emerald-500 to-teal-500',
+                bg: 'bg-emerald-500/10 border-emerald-500/30',
+                btnBorder: 'border-emerald-400',
+                btnText: 'text-emerald-300',
+                btnHover: 'hover:bg-emerald-500/20',
+            },
+            {
+                number: 3,
+                icon: PlusCircle,
+                title: '¡Agrega tu primer gasto!',
+                description: 'Anota lo que compraste o pagaste: cuánto fue, en qué categoría entra (por ejemplo "Alimentación") y con qué pagaste. ¡Es muy rápido!',
+                action: { label: 'Agregar gasto', href: '/expenses/new' },
+                gradient: 'from-amber-500 to-orange-500',
+                bg: 'bg-amber-500/10 border-amber-500/30',
+                btnBorder: 'border-amber-400',
+                btnText: 'text-amber-300',
+                btnHover: 'hover:bg-amber-500/20',
+            },
+        ]
+
+        return (
+            <div className="space-y-8 animate-fadeIn">
+                {/* Header de bienvenida */}
+                <div className="text-center py-6">
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                        <CheckCircle2 className="w-10 h-10 text-white" />
+                    </div>
+                    <h1 className="text-3xl font-bold text-white mb-2">¡Bienvenida a tu Control de Gastos!</h1>
+                    <p className="text-[var(--text-secondary)] text-lg max-w-xl mx-auto">
+                        Para empezar, sigue estos 3 pasos sencillos. Solo te tomará unos minutos y podrás ver todo tu resumen financiero aquí.
+                    </p>
+                </div>
+
+                {/* Pasos */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {steps.map((step) => (
+                        <div
+                            key={step.number}
+                            className={`glass-card p-6 border ${step.bg} flex flex-col gap-4`}
+                        >
+                            {/* Número + ícono */}
+                            <div className="flex items-center gap-3">
+                                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${step.gradient} flex items-center justify-center shrink-0 shadow-lg`}>
+                                    <step.icon className="w-6 h-6 text-white" />
+                                </div>
+                                <span className="text-5xl font-black text-white/20 leading-none select-none">
+                                    {step.number}
+                                </span>
+                            </div>
+
+                            {/* Texto */}
+                            <div className="flex-1">
+                                <h2 className="text-white font-semibold text-lg mb-2 leading-snug">
+                                    {step.title}
+                                </h2>
+                                <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
+                                    {step.description}
+                                </p>
+                            </div>
+
+                            {/* Botón */}
+                            <Link
+                                href={step.action.href}
+                                className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-sm border bg-transparent transition-colors ${step.btnBorder} ${step.btnText} ${step.btnHover}`}
+                            >
+                                {step.action.label}
+                                <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Tip adicional */}
+                <div className="glass-card p-5 border border-white/10 flex gap-4 items-start">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="text-base">💡</span>
+                    </div>
+                    <div>
+                        <p className="text-white font-semibold mb-1">
+                            ¿Necesitas ayuda?
+                        </p>
+                        <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
+                            No te preocupes si te equivocas — puedes editar o borrar cualquier gasto o ingreso cuando quieras.
+                            El menú de la izquierda te lleva a todas las secciones.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // ── Dashboard normal (con datos) ──────────────────────────
     return (
         <div className="space-y-6 animate-fadeIn">
             {/* Header */}
@@ -244,15 +157,15 @@ export default async function DashboardPage() {
             {/* No incomes alert */}
             {!incomeData.hasIncomes && (
                 <div className="glass-card p-4 border-l-4 border-amber-500 bg-amber-500/5">
-                    <div className="flex items-center gap-3">
-                        <Banknote className="w-6 h-6 text-amber-500" />
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                        <Banknote className="w-6 h-6 text-amber-500 shrink-0" />
                         <div className="flex-1">
                             <p className="text-white font-medium">Aún no has ingresado tu sueldo</p>
                             <p className="text-[var(--text-secondary)] text-sm">
                                 Regístralo para ver tu balance real y cuánto dinero te queda disponible.
                             </p>
                         </div>
-                        <Link href="/incomes/new" className="btn-gradient text-sm px-4 py-2">
+                        <Link href="/incomes/new" className="btn-gradient text-sm px-4 py-2 w-full sm:w-auto text-center">
                             Registrar ingreso
                         </Link>
                     </div>
@@ -262,12 +175,12 @@ export default async function DashboardPage() {
             {/* Summary Cards */}
             <SummaryCards summary={summary} />
 
-            {/* Insights Panel - NEW */}
+            {/* Insights Panel */}
             <InsightsPanel />
 
             {/* Income & Budget Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Budget Card - NEW */}
+                {/* Budget Card */}
                 <div className="glass-card glass-card-hover p-6">
                     <div className="flex items-center justify-between mb-4">
                         <span className="text-[var(--text-secondary)] text-sm font-medium">
@@ -324,7 +237,7 @@ export default async function DashboardPage() {
                     </p>
                 </div>
 
-                {/* Percentage Used Card - IMPROVED */}
+                {/* Percentage Used Card */}
                 <div className="glass-card glass-card-hover p-6">
                     <div className="flex items-center justify-between mb-4">
                         <span className="text-[var(--text-secondary)] text-sm font-medium">
@@ -344,7 +257,6 @@ export default async function DashboardPage() {
                             {incomeData.hasIncomes || budgetData.hasBudget ? `${incomeData.percentageUsed}%` : '--%'}
                         </p>
                     </div>
-                    {/* Progress bar with dynamic colors */}
                     {(incomeData.hasIncomes || budgetData.hasBudget) && (
                         <div className="mt-3 h-2 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
                             <div
@@ -356,7 +268,6 @@ export default async function DashboardPage() {
                             />
                         </div>
                     )}
-                    {/* Dynamic status message */}
                     {(incomeData.hasIncomes || budgetData.hasBudget) && (
                         <p className={`text-xs mt-2 ${budgetData.budgetStatus === 'danger' ? 'text-red-400' :
                             budgetData.budgetStatus === 'warning' ? 'text-amber-400' : 'text-emerald-400'
@@ -369,13 +280,10 @@ export default async function DashboardPage() {
 
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Income vs Expenses Chart */}
                 <div className="glass-card p-6">
                     <h2 className="text-lg font-semibold text-white mb-4">Ingresos vs Gastos</h2>
                     <BalanceChart data={balanceChartData} />
                 </div>
-
-                {/* Category Distribution */}
                 <div className="glass-card p-6">
                     <h2 className="text-lg font-semibold text-white mb-4">Por categoría</h2>
                     <CategoryChart data={categoryChartData} />
@@ -401,3 +309,4 @@ export default async function DashboardPage() {
         </div>
     )
 }
+

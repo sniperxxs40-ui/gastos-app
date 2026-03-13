@@ -1,0 +1,12 @@
+
+> gastos-app@0.1.0 test
+> jest submits form correctly
+
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\josec\OneDrive\Documentos\GastosPersonales\gastos-app
+  858 files checked.
+  testMatch: **/__tests__/**/*.?([mc])[jt]s?(x), **/?(*.)+(spec|test).?([mc])[jt]s?(x) - 6 matches
+  testPathIgnorePatterns: \\node_modules\\, \\.next\\ - 70 matches
+  testRegex:  - 0 matches
+Pattern: submits form correctly - 0 matches

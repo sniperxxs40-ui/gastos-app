@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { ExpenseTable } from '@/components/expenses/ExpenseTable'
 import { FiltersBar } from '@/components/expenses/FiltersBar'
+import { Pagination } from '@/components/ui/pagination'
 import { ExpenseWithRelations, Category, PaymentMethod, ExpenseFilters } from '@/lib/types'
 
 export default function ExpensesPage() {
@@ -102,6 +103,29 @@ export default function ExpensesPage() {
         }
     }
 
+    const handlePayInstallment = async (id: string) => {
+        try {
+            const response = await fetch(`/api/expenses/${id}/pay-installment`, {
+                method: 'POST',
+            })
+            const result = await response.json()
+
+            if (response.ok) {
+                if (result.allPaid) {
+                    toast.success('🎉 ' + result.message)
+                } else {
+                    toast.success('✅ ' + result.message)
+                }
+                fetchExpenses()
+            } else {
+                toast.error(result.error || 'Error al registrar el pago')
+            }
+        } catch (error) {
+            console.error('Error paying installment:', error)
+            toast.error('Error al registrar el pago de cuota')
+        }
+    }
+
     const handleFiltersChange = (newFilters: ExpenseFilters) => {
         setFilters(newFilters)
         setPagination(prev => ({ ...prev, page: 1 }))
@@ -125,10 +149,10 @@ export default function ExpensesPage() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className={`btn-ghost flex items-center gap-2 ${hasActiveFilters ? 'border-emerald-500 text-emerald-400' : ''}`}
+                        className={`btn-ghost flex items-center justify-center gap-2 flex-1 sm:flex-initial ${hasActiveFilters ? 'border-emerald-500 text-emerald-400' : ''}`}
                     >
                         <Filter className="w-4 h-4" />
                         <span>Filtros</span>
@@ -137,7 +161,7 @@ export default function ExpensesPage() {
                         )}
                     </button>
 
-                    <Link href="/expenses/new" className="btn-gradient flex items-center gap-2">
+                    <Link href="/expenses/new" className="btn-gradient flex items-center justify-center gap-2 flex-1 sm:flex-initial">
                         <Plus className="w-4 h-4" />
                         <span>Nuevo gasto</span>
                     </Link>
@@ -174,31 +198,18 @@ export default function ExpensesPage() {
                     expenses={expenses}
                     loading={loading}
                     onDelete={handleDelete}
+                    onPayInstallment={handlePayInstallment}
                 />
 
                 {/* Pagination */}
                 {pagination.totalPages > 1 && (
-                    <div className="flex items-center justify-between p-4 border-t border-[var(--border-color)]">
-                        <p className="text-sm text-[var(--text-secondary)]">
-                            Página {pagination.page} de {pagination.totalPages}
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                                disabled={pagination.page === 1}
-                                className="btn-ghost py-2 px-4 disabled:opacity-50"
-                            >
-                                Anterior
-                            </button>
-                            <button
-                                onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                                disabled={pagination.page === pagination.totalPages}
-                                className="btn-ghost py-2 px-4 disabled:opacity-50"
-                            >
-                                Siguiente
-                            </button>
-                        </div>
-                    </div>
+                    <Pagination
+                        currentPage={pagination.page}
+                        totalPages={pagination.totalPages}
+                        totalItems={pagination.total}
+                        itemsPerPage={pagination.limit}
+                        onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+                    />
                 )}
             </div>
         </div>

@@ -8,9 +8,7 @@ export default function ProtectedLayout({
     return (
         <div className="min-h-screen bg-[var(--bg-primary)]">
             <Sidebar />
-            <main
-                style={{ marginLeft: '16rem', minHeight: '100vh', padding: '1.5rem' }}
-            >
+            <main className="main-content">
                 <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
                     {children}
                 </div>

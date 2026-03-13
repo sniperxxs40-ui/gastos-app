@@ -8,6 +8,7 @@ import { Income } from '@/lib/types'
 import { Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton'
+import { Pagination } from '@/components/ui/pagination'
 
 function IncomesContent() {
     const searchParams = useSearchParams()
@@ -98,7 +99,7 @@ function IncomesContent() {
     return (
         <div className="space-y-6 animate-fadeIn">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-white">Ingresos</h1>
                     <p className="text-[var(--text-secondary)] mt-1">
@@ -107,7 +108,7 @@ function IncomesContent() {
                 </div>
                 <Link
                     href="/incomes/new"
-                    className="btn-gradient flex items-center gap-2"
+                    className="btn-gradient flex items-center justify-center gap-2 w-full sm:w-auto"
                 >
                     <Plus className="w-5 h-5" />
                     <span>Nuevo ingreso</span>
@@ -116,8 +117,8 @@ function IncomesContent() {
 
             {/* Filters */}
             <div className="glass-card p-4">
-                <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <div className="md:col-span-2">
+                <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="sm:col-span-2">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
                             <input
@@ -186,29 +187,14 @@ function IncomesContent() {
 
                         {/* Pagination */}
                         {pagination.totalPages > 1 && (
-                            <div className="flex items-center justify-between mt-6 pt-6 border-t border-[var(--border-color)]">
-                                <p className="text-[var(--text-secondary)] text-sm">
-                                    Mostrando {incomes.length} de {pagination.total} ingresos
-                                </p>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))}
-                                        disabled={pagination.page === 1}
-                                        className="p-2 hover:bg-[var(--bg-secondary)] rounded-lg disabled:opacity-50"
-                                    >
-                                        <ChevronLeft className="w-5 h-5" />
-                                    </button>
-                                    <span className="text-white px-3">
-                                        {pagination.page} / {pagination.totalPages}
-                                    </span>
-                                    <button
-                                        onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))}
-                                        disabled={pagination.page === pagination.totalPages}
-                                        className="p-2 hover:bg-[var(--bg-secondary)] rounded-lg disabled:opacity-50"
-                                    >
-                                        <ChevronRight className="w-5 h-5" />
-                                    </button>
-                                </div>
+                            <div className="mt-4">
+                                <Pagination
+                                    currentPage={pagination.page}
+                                    totalPages={pagination.totalPages}
+                                    totalItems={pagination.total}
+                                    itemsPerPage={pagination.limit}
+                                    onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+                                />
                             </div>
                         )}
                     </>
