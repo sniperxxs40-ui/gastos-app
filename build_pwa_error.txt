@@ -1,0 +1,52 @@
+
+> gastos-app@0.1.0 build
+> next build
+
+Ôû▓ Next.js 16.1.4 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+  Using external babel configuration from C:\Users\josec\OneDrive\Documentos\GastosPersonales\gastos-app\.babelrc
+Ô£ô Compiled successfully in 15.9s
+  Running TypeScript ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/20) ...
+  Generating static pages using 15 workers (5/20) 
+  Generating static pages using 15 workers (10/20) 
+  Generating static pages using 15 workers (15/20) 
+Ô£ô Generating static pages using 15 workers (20/20) in 954.6ms
+  Finalizing page optimization ...
+
+Route (app)
+Ôöî Ôùï /
+Ôö£ Ôùï /_not-found
+Ôö£ ãÆ /api/categories
+Ôö£ ãÆ /api/expenses
+Ôö£ ãÆ /api/expenses/[id]
+Ôö£ ãÆ /api/expenses/[id]/pay-installment
+Ôö£ ãÆ /api/health
+Ôö£ ãÆ /api/incomes
+Ôö£ ãÆ /api/incomes/[id]
+Ôö£ ãÆ /api/payment-methods
+Ôö£ ãÆ /api/reports/balance
+Ôö£ ãÆ /api/reports/budget-status
+Ôö£ ãÆ /api/reports/insights
+Ôö£ ãÆ /dashboard
+Ôö£ Ôùï /expenses
+Ôö£ ãÆ /expenses/[id]/edit
+Ôö£ Ôùï /expenses/new
+Ôö£ Ôùï /forgot-password
+Ôö£ Ôùï /incomes
+Ôö£ ãÆ /incomes/[id]/edit
+Ôö£ Ôùï /incomes/new
+Ôö£ Ôùï /login
+Ôö£ Ôùï /register
+Ôö£ Ôùï /reset-password
+Ôöö Ôùï /settings
+
+
+ãÆ Proxy (Middleware)
+
+Ôùï  (Static)   prerendered as static content
+ãÆ  (Dynamic)  server-rendered on demand
+
