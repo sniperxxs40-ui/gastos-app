@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# temp output files
+test_output*.txt
+build_output*.txt
+build_pwa_error*.txt
