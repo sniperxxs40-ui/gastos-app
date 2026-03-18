@@ -28,6 +28,23 @@ export function Sidebar() {
     const router = useRouter()
     const supabase = createClient()
     const [mobileOpen, setMobileOpen] = useState(false)
+    const [userName, setUserName] = useState<string>('')
+    const [userEmail, setUserEmail] = useState<string>('')
+    const [userInitial, setUserInitial] = useState<string>('')
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                const name = user.user_metadata?.full_name || ''
+                const email = user.email || ''
+                setUserName(name)
+                setUserEmail(email)
+                setUserInitial(name ? name.charAt(0).toUpperCase() : email ? email.charAt(0).toUpperCase() : '?')
+            }
+        }
+        fetchUser()
+    }, [supabase.auth])
 
     // Close mobile menu on route change
     useEffect(() => {
@@ -83,11 +100,26 @@ export function Sidebar() {
                 })}
             </nav>
 
-            {/* Logout */}
+            {/* User Profile & Logout */}
             <div className="p-4 border-t border-[var(--border-color)]">
+                <div className="flex items-center gap-3 mb-4 px-2 cursor-default">
+                    <div className="w-8 h-8 rounded-full bg-[#2dd4a8]/20 flex items-center justify-center text-[#2dd4a8] font-semibold flex-shrink-0">
+                        {userInitial || <Wallet className="w-4 h-4" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-white truncate">
+                            {userName || userEmail.split('@')[0]}
+                        </p>
+                        {userName ? (
+                            <p className="text-xs text-[#7a8ba0] truncate">
+                                {userEmail}
+                            </p>
+                        ) : null}
+                    </div>
+                </div>
                 <button
                     onClick={handleLogout}
-                    className="nav-item w-full text-left hover:text-red-400"
+                    className="nav-item w-full text-left hover:text-red-400 transition-colors"
                 >
                     <LogOut className="w-5 h-5" />
                     <span>Cerrar sesión</span>

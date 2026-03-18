@@ -197,6 +197,7 @@ export default function ResetPasswordForm() {
                                 placeholder="Nueva contraseña"
                                 className="auth-input pr-14"
                                 autoComplete="new-password"
+                                suppressHydrationWarning
                             />
                             <button
                                 type="button"
@@ -221,6 +222,7 @@ export default function ResetPasswordForm() {
                                 placeholder="Confirmar contraseña"
                                 className="auth-input pr-14"
                                 autoComplete="new-password"
+                                suppressHydrationWarning
                             />
                             <button
                                 type="button"

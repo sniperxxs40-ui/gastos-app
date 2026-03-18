@@ -96,6 +96,7 @@ export default function RegisterPage() {
                                 placeholder="Nombre completo"
                                 className="auth-input"
                                 autoComplete="name"
+                                suppressHydrationWarning
                             />
                         </div>
                         {errors.fullName && (
@@ -113,6 +114,7 @@ export default function RegisterPage() {
                                 placeholder="tu@email.com"
                                 className="auth-input"
                                 autoComplete="email"
+                                suppressHydrationWarning
                             />
                         </div>
                         {errors.email && (
@@ -130,6 +132,7 @@ export default function RegisterPage() {
                                 placeholder="Contraseña"
                                 className="auth-input pr-14"
                                 autoComplete="new-password"
+                                suppressHydrationWarning
                             />
                             <button
                                 type="button"
@@ -154,6 +157,7 @@ export default function RegisterPage() {
                                 placeholder="Confirmar contraseña"
                                 className="auth-input"
                                 autoComplete="new-password"
+                                suppressHydrationWarning
                             />
                         </div>
                         {errors.confirmPassword && (

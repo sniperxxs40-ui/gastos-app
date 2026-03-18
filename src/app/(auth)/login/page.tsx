@@ -84,6 +84,7 @@ export default function LoginPage() {
                                 placeholder="tu@email.com"
                                 className="auth-input"
                                 autoComplete="email"
+                                suppressHydrationWarning
                             />
                         </div>
                         {errors.email && (
@@ -101,6 +102,7 @@ export default function LoginPage() {
                                 placeholder="••••••••"
                                 className="auth-input pr-14"
                                 autoComplete="current-password"
+                                suppressHydrationWarning
                             />
                             <button
                                 type="button"

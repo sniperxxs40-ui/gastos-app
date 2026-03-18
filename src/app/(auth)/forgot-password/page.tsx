@@ -130,6 +130,7 @@ export default function ForgotPasswordPage() {
                                 className="auth-input"
                                 autoComplete="email"
                                 autoFocus
+                                suppressHydrationWarning
                             />
                         </div>
                         {errors.email && (
